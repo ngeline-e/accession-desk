@@ -56,11 +56,26 @@ def clean_object(raw) -> str:
     return text[:MAX_OBJECT_CHARS]
 
 
-def generate_label(object_description: str) -> dict:
-    """Curator call: description -> structured wall label (with one length retry)."""
+def label_problems(label: dict) -> list:
+    """Checks the rules the code can verify. Returns a list of fixes to ask for."""
+    problems = []
+    n = word_count(label["extended_label"])
+    if not MIN_WORDS <= n <= MAX_WORDS:
+        problems.append(f"The extended label has {n} words; it must have {MIN_WORDS}-{MAX_WORDS}.")
+    banned = prompts.find_banned(label["extended_label"])
+    if banned:
+        problems.append("Remove these banned phrases: " + ", ".join(f'"{b}"' for b in banned) + ".")
+    if re.search(r"(^|[.!?]\s+)It is (a|an|three|two) ", label["extended_label"]):
+        problems.append('Reword the literal sentence: do not start it with "It is a".')
+    return problems
+
+
+def generate_label(object_description: str, scale: str) -> dict:
+    """Curator call: description + scale directive -> structured wall label.
+    Retries once if the code-checkable rules are broken."""
     messages = [
         {"role": "developer", "content": prompts.LABEL_SYSTEM_PROMPT},
-        {"role": "user", "content": f"Object submitted by a visitor: {object_description}"},
+        {"role": "user", "content": prompts.curator_message(object_description, scale)},
     ]
     label = None
     for _attempt in range(2):
@@ -78,31 +93,28 @@ def generate_label(object_description: str) -> dict:
             },
         )
         label = json.loads(response.output_text)
-        n = word_count(label["extended_label"])
-        if MIN_WORDS <= n <= MAX_WORDS:
+        problems = label_problems(label)
+        if not problems:
             break
-        # Ask the curator to fix the length, keeping everything else.
         messages += [
             {"role": "assistant", "content": response.output_text},
             {
                 "role": "user",
-                "content": (
-                    f"The extended label has {n} words. Rewrite it to between "
-                    f"{MIN_WORDS} and {MAX_WORDS} words. Keep every other field and all rules."
-                ),
+                "content": "Revise the label. " + " ".join(problems)
+                + " Keep every other field and all rules.",
             },
         ]
     return label
 
 
-def generate_image_prompt(label: dict) -> str:
+def generate_image_prompt(label: dict, setting: str) -> str:
     """Installer call: label -> image prompt. Falls back to a template on failure."""
     try:
         response = client.responses.create(
             model=TEXT_MODEL,
             input=[
                 {"role": "developer", "content": prompts.IMAGE_DIRECTOR_PROMPT},
-                {"role": "user", "content": prompts.label_to_brief(label)},
+                {"role": "user", "content": prompts.label_to_brief(label, setting)},
             ],
             temperature=0.8,
         )
@@ -111,7 +123,7 @@ def generate_image_prompt(label: dict) -> str:
             return text
     except Exception as exc:  # noqa: BLE001
         app.logger.warning("Image director failed, using fallback: %s", exc)
-    return prompts.fallback_image_prompt(label)
+    return prompts.fallback_image_prompt(label, setting)
 
 
 def generate_image(image_prompt: str) -> str:
@@ -142,20 +154,21 @@ def mock_label(object_description: str) -> dict:
         "year": "2026",
         "medium": "Found object, lint, residual intention",
         "dimensions": "Dimensions variable",
+        "condition": f"Many copies of {name}, laid out in a loose line across a grey concrete floor.",
         "provenance": "Found at the bottom of a tote bag, 2026; private collection of a visitor; acquired by the museum after a brief hesitation",
         "credit_line": "Gift of the visitor's pocket",
         "theorist": "Halvard Quenneville",
         "theorist_book": "The Pocket as Archive",
         "extended_label": (
-            "Through a quasi-forensic attention to the overlooked, this work "
-            "simultaneously and insistently interrogates the infrastructure of "
-            "carrying, foregrounding the potentiality of the residual against the "
-            f"hyper-visibility of exhibition. It is {name}. As invented theorist "
+            "Holding Pattern occupies the infrastructure of carrying with a "
+            "quasi-forensic patience, tenderly and forensically interrogating the "
+            "potentiality of the residual against the hyper-visibility of "
+            "exhibition. Someone carried this around for weeks. As invented theorist "
             "Halvard Quenneville argues in The Pocket as Archive, the post-functional "
             "object destabilizes the distinction between possession and accompaniment. "
             "Here, the everyday becomes a para-institutional space in which use "
-            "problematizes value; the work renders visible neither utility nor its "
-            "absence, but an ongoing, radically and deliberately unresolved becoming."
+            "problematizes value; the work stages neither utility nor its "
+            "absence, less an object than a quietly negotiated, provisional custody of the overlooked."
         ),
     }
 
@@ -188,9 +201,13 @@ def api_label():
     obj = clean_object(data.get("object"))
     if not obj:
         return jsonify(error="Describe an object first."), 400
+    scale = prompts.choose_scale()
     try:
-        label = mock_label(obj) if MOCK_MODE else generate_label(obj)
+        label = mock_label(obj) if MOCK_MODE else generate_label(obj, scale)
         label["word_count"] = word_count(label["extended_label"])
+        # Chosen by the app, stored with the label so the installer uses the same one.
+        label["scale"] = "variable" if MOCK_MODE else scale
+        label["setting"] = prompts.choose_setting(label["scale"])
         return jsonify(label=label)
     except Exception as exc:  # noqa: BLE001
         app.logger.exception("Label generation failed")
@@ -201,17 +218,22 @@ def api_label():
 def api_install():
     data = request.get_json(silent=True) or {}
     label = data.get("label")
-    required = prompts.LABEL_SCHEMA["required"]
+    required = prompts.LABEL_FIELDS
     if not isinstance(label, dict) or not all(isinstance(label.get(k), str) for k in required):
         return jsonify(error="A complete wall label is required."), 400
+    scale, setting = label.get("scale"), label.get("setting")
+    if not isinstance(setting, str) or not prompts.setting_is_valid(scale, setting):
+        # Never pass free text from the browser as the setting.
+        scale = scale if scale in prompts.SCALES else "true"
+        setting = prompts.choose_setting(scale)
     # Only keep known fields and cap their length before they reach the model.
     label = {k: label[k][:1500] for k in required}
     try:
         if MOCK_MODE:
-            image_prompt = prompts.fallback_image_prompt(label)
+            image_prompt = prompts.fallback_image_prompt(label, setting)
             image = mock_image()
         else:
-            image_prompt = generate_image_prompt(label)
+            image_prompt = generate_image_prompt(label, setting)
             image = generate_image(image_prompt)
         return jsonify(image_prompt=image_prompt, image=image)
     except Exception as exc:  # noqa: BLE001

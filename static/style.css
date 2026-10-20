@@ -108,6 +108,7 @@ details summary { cursor: pointer; }
 }
 .label p { margin: 0 0 12px; }
 .label .artist { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+.label .condition { color: var(--muted); font-size: 12px; }
 .label hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
 .label .extended { margin: 0; line-height: 1.5; }
 

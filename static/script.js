@@ -9,7 +9,7 @@ const notes = document.getElementById("notes");
 const promptEl = document.getElementById("image-prompt");
 
 const FIELDS = ["artist_name", "artist_bio", "title", "year", "medium",
-                "dimensions", "provenance", "credit_line", "extended_label"];
+                "dimensions", "condition", "provenance", "credit_line", "extended_label"];
 
 function setStatus(text, isError = false) {
   statusEl.textContent = text;
