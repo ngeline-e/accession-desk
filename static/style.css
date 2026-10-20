@@ -1,0 +1,120 @@
+:root {
+  --wall: #f4f3ef;
+  --ink: #1b1b1b;
+  --muted: #6b6a66;
+  --line: #d8d6d0;
+  --card: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--wall);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  line-height: 1.4;
+}
+
+.wrap { max-width: 1100px; margin: 0 auto; padding: 32px 16px 48px; }
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 { margin: 0 0 20px; font-size: clamp(22px, 3vw, 30px); font-weight: 600; }
+
+.mock {
+  display: inline-block;
+  margin: -8px 0 16px;
+  padding: 6px 10px;
+  background: #fff4c7;
+  font-size: 13px;
+}
+
+form { display: flex; gap: 8px; }
+
+input {
+  flex: 1;
+  min-width: 0;
+  padding: 14px;
+  font: inherit;
+  font-size: 16px;
+  border: 1px solid var(--ink);
+  background: #fff;
+}
+
+button#submit {
+  padding: 0 24px;
+  font: inherit;
+  font-size: 16px;
+  color: #fff;
+  background: var(--ink);
+  border: 0;
+  cursor: pointer;
+}
+button#submit:disabled { opacity: .5; cursor: progress; }
+
+.examples { margin: 12px 0 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.chip {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.chip:hover { border-color: var(--ink); color: var(--ink); }
+
+.status { min-height: 1.4em; margin: 18px 0; color: var(--muted); font-size: 14px; }
+.status.error { color: #a12a1a; }
+
+.exhibit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 48px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.work { margin: 0; }
+
+.frame { position: relative; aspect-ratio: 1 / 1; background: #e6e4de; }
+.frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.frame img:not([src]), .frame img[src=""] { visibility: hidden; }
+
+.developing {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: var(--muted); font-size: 14px;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+[hidden] { display: none !important; }
+@keyframes pulse { 50% { opacity: .35; } }
+
+details { margin-top: 10px; font-size: 12px; color: var(--muted); }
+details summary { cursor: pointer; }
+
+.label {
+  background: var(--card);
+  padding: 20px;
+  font-size: 13px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+}
+.label p { margin: 0 0 12px; }
+.label .artist { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+.label hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
+.label .extended { margin: 0; line-height: 1.5; }
+
+footer { text-align: center; font-size: 12px; color: var(--muted); padding: 0 16px 32px; }
+
+@media (max-width: 760px) {
+  .exhibit { grid-template-columns: 1fr; gap: 24px; }
+  form { flex-direction: column; }
+  button#submit { padding: 14px; }
+}

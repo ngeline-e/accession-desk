@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Accession Desk</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <p class="eyebrow">The Accession Desk · Permanent Collection</p>
+      <h1>Describe an object and get it exhibited with its label.</h1>
+      {% if mock_mode %}
+        <p class="mock">Mock mode: no API key found, so labels and images are placeholders.</p>
+      {% endif %}
+    </header>
+
+    <form id="form" autocomplete="off">
+      <input id="object" name="object" maxlength="300" required
+             placeholder="e.g. a half-eaten granola bar, slightly crushed, still in its wrapper">
+      <button id="submit" type="submit">Accession</button>
+    </form>
+
+    <div class="examples" aria-label="Examples">
+      <span>Try:</span>
+      <button type="button" class="chip">my cat Novita</button>
+      <button type="button" class="chip">a dried-out yellow highlighter</button>
+      <button type="button" class="chip">a crumpled STM bus transfer</button>
+      <button type="button" class="chip">three hair elastics on a wrist</button>
+    </div>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+
+    <section id="exhibit" class="exhibit" hidden>
+      <figure class="work">
+        <div id="frame" class="frame">
+          <img id="image" alt="">
+          <div id="developing" class="developing">The work is being installed…</div>
+        </div>
+        <details id="notes" hidden>
+          <summary>Installer's notes (the image prompt, written from the label)</summary>
+          <p id="image-prompt"></p>
+        </details>
+      </figure>
+
+      <aside class="label" aria-label="Wall label">
+        <p class="artist" id="artist_name"></p>
+        <p id="artist_bio"></p>
+        <p><em id="title"></em>, <span id="year"></span></p>
+        <p><span id="medium"></span><br><span id="dimensions"></span></p>
+        <p id="provenance"></p>
+        <p id="credit_line"></p>
+        <hr>
+        <p id="extended_label" class="extended"></p>
+      </aside>
+    </section>
+  </main>
+
+  <footer>
+    All artists, theorists and books on this site are invented. Any resemblance to real reputations is a curatorial accident.
+  </footer>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
