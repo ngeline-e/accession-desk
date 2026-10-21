@@ -2,8 +2,13 @@
 
 A web app that turns any ordinary object into a work of contemporary art. A visitor describes something from their pocket, bag or desk; the app writes its museum wall label in International Art English (IAE) and generates a photograph of the object installed in an exhibition.
 
-- **Live app:** https://YOUR-APP.onrender.com  <!-- replace after deploying -->
+- **Live app:** https://accession-desk.onrender.com/
+  (free hosting: the first visit after a quiet period can take up to a minute to wake up)
 - **Built with:** Flask, the OpenAI Responses API (label + image prompt) and the OpenAI Images API (`gpt-image-1`)
+
+![Three hair elastics on a wrist, accessioned as a wall of plaster forearms](screenshots/v2-elastics.png)
+
+*"three hair elastics on a wrist", version 2: the label scaled it to "Dimensions variable", and the installer built a wall of plaster forearms, each wearing the elastics.*
 
 ---
 
@@ -59,6 +64,16 @@ visitor description ──► CURATOR ──► label JSON (dimensions + conditi
 
 The page shows the final image prompt under **Installer's notes**, so you can check that the image follows the label.
 
+### Three real examples from the live app
+
+| Object typed | Scale assigned | What the label said | What the image showed |
+|---|---|---|---|
+| a modern wooden chair | Dimensions variable | Condition: "Multiple modern wooden chairs, some whole and others reduced to their primary forms (legs, seats, backrests), dispersed irregularly across the floor and propped against the wall" | A dark corridor-like gallery with whole chairs and loose wooden parts trailing along the floor and wall |
+| three hair elastics on a wrist | Dimensions variable | Condition: "Three black and brown hair elastics looped around the wrist of a white plaster cast forearm… repeats this motif at irregular intervals along an array of identical casts" | A long white wall of plaster forearms, each wearing the elastics, with one visitor at the far end for scale |
+| a fire hydrant on a sidewalk | True size, 81 x 46 x 46 cm | Condition: "A full-size fire hydrant painted in gloss red with silver caps… bolted on a concrete sidewalk slab… patches of tar around the base" | The red hydrant on its slab of sidewalk, on a low plinth under a single spotlight in a dark room |
+
+In each case the image follows the label's dimensions and condition report, not the few words the visitor typed. The hydrant shows the chain most clearly: "on a sidewalk" only reached the image because the curator turned it into a slab of concrete in the condition report.
+
 ## Testing and iteration
 
 I tested version 1 with five objects (a modern wooden chair, a crumpled STM bus transfer, a fire hydrant on a sidewalk, three hair elastics on a wrist, a half-eaten croissant with chocolate fondue).
@@ -77,9 +92,33 @@ I tested version 1 with five objects (a modern wooden chair, a crumpled STM bus 
 
 The repetition problem is itself evidence for the reflection below: given examples, the model treats them as the dialect.
 
+| | Version 1 | Version 2 |
+|---|---|---|
+| Hair elastics | ![v1 elastics](screenshots/v1-elastics.png) | ![v2 elastics](screenshots/v2-elastics.png) |
+| Fire hydrant | ![v1 hydrant](screenshots/v1-hydrant.png) | ![v2 hydrant](screenshots/v2-hydrant.png) |
+| Wooden chair | ![v1 chair](screenshots/v1-chair.png) | ![v2 chair](screenshots/v2-chair.png) |
+
+### Results of version 2
+
+**What improved:**
+
+- **Variety of scale and setting.** The chair and the elastics came back as dispersed installations ("Dimensions variable"); the hydrant stayed at true size under a spotlight. The gallery no longer looks like the same white plinth every time.
+- **Accuracy of the image.** The condition report carried details the image model used to lose: the elastics now sit on plaster wrists, and the hydrant keeps its sidewalk slab and tar.
+- **The literal sentence.** It is no longer a copy of my input: "These are objects you might use to rest.", "Someone once paced past it daily.", "Three small circles touch pale facsimile skin."
+- **No banned phrases**, and new endings that fit each object ("a recalcitrant attachment", "a persistent infrastructural anticipation", "a deferred occupation"). All labels stayed between 85 and 98 words.
+
+**What still goes wrong:**
+
+- **The model still borrows from the prompt's examples, just less obviously.** The chair label used "Recursively and without apology" word for word from my list of sample adverb pairs, and the elastics label wrote "tenderly and subtractively", a variation on my "tenderly and forensically". Banning phrases moved the problem; it did not remove it.
+- **It sometimes breaks the "exactly one" rules.** The hydrant label has two adverb pairs ("meticulously and implacably", "hyperbolically and privately").
+- **It follows the letter of a rule rather than its spirit.** I asked for the theorist to be introduced with the words "invented theorist", and the hydrant label produced "Viktor Turlotte, in his invented theorist's treatise", which squeezes the phrase in where it makes no sense.
+- **The condition report slips into art language** ("The arrangement oscillates between patterns of order and casual disassembly"), even though Rule 7 asks for a plain registrar's voice.
+
+A next version would remove the example lists from the prompt entirely and check the number of adverb pairs in code.
+
 ## 3. User guide
 
-1. Open the app.
+1. Open the app at https://accession-desk.onrender.com/ and wait for it to load.
 2. In the text field, describe one object as precisely as you can: what it is, its colour, condition, where you found it. *"A dried-out yellow highlighter with a chewed cap"* works better than *"a pen"*. You can also click one of the **Try** examples.
 3. Press **Accession**.
 4. The wall label appears first (about 5–10 seconds). The installation photograph follows (about 20–60 seconds) to the left of the label.
